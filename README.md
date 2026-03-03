@@ -1,50 +1,88 @@
-# Welcome to your Expo app 👋
+# UrbanExplorer
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A nature education app that uses AR-guided lessons to teach plant biology outdoors. Users explore real plants through interactive camera experiences, identify species, learn about plant parts and processes, and build a personal nature journal.
 
-## Get started
+## Features
 
-1. Install dependencies
+- **Guided Lessons** — Structured lessons on plant reproduction, life cycles, and photosynthesis with step-by-step outdoor tasks
+- **AR Camera Experience** — Point your camera at plants to identify them, highlight parts (stomata, roots, flowers), and follow interactive prompts
+- **My Garden** — Collect plants you've discovered into a personal garden with photos, earned badges, and key points learned
+- **Nature Journal** — Record observations and reflections after each lesson
+- **Progress Tracking** — Track lesson completion, badges earned, and plants collected
 
-   ```bash
-   npm install
-   ```
+## Screenshots
 
-2. Start the app
+### Landing Page
+![Landing Page](urban%20explorer%20landing%20page%20prototype.png)
 
-   ```bash
-   npx expo start
-   ```
+### AR Experience & My Garden
+![AR Experience and My Garden](urban%20explorer%20basic%20prototype.png)
 
-In the output, you'll find options to open the app in a
+## Tech Stack
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+- **React Native** with **Expo SDK** (Expo Router for file-based navigation)
+- **TypeScript**
+- **Zustand** for state management (persisted with AsyncStorage)
+- **expo-camera** for AR camera view
+- **react-native-reanimated** for animations
+- **react-native-svg** for custom graphics
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## Project Structure
 
-## Get a fresh project
+```
+app/                          Routes (Expo Router)
+  index.tsx                   Landing page (Notice/Wonder/Observe)
+  (tabs)/lessons/             Lesson list + detail screens
+  (tabs)/garden/              Garden grid + plant detail screens
+  (tabs)/profile/             Profile with stats
+  ar/[lessonId].tsx           Full-screen AR camera experience
 
-When you're ready, run:
-
-```bash
-npm run reset-project
+src/
+  components/ui/              Button, Card, Badge, ProgressBar, IconButton
+  components/ar/              CameraViewfinder, AROverlay, IdentifyingLoader,
+                              PlantResultCard, ObservationPrompt, PlantHighlightMarker
+  components/lessons/         LessonCard, TaskStep
+  components/garden/          PlantThumbnail, BadgeGrid, MediaRow
+  stores/                     Zustand stores (lessons, garden, AR session)
+  data/                       Mock data (6 plants, 3 lessons, 3 garden entries)
+  types/                      TypeScript type definitions
+  theme/                      Colors, typography, spacing tokens
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Getting Started
 
-## Learn more
+### Prerequisites
 
-To learn more about developing your project with Expo, look at the following resources:
+- Node.js 20+
+- Expo Go app on your phone (or an Android/iOS emulator)
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+### Install & Run
 
-## Join the community
+```bash
+npm install
+npx expo start
+```
 
-Join our community of developers creating universal apps.
+Scan the QR code with Expo Go (Android) or the Camera app (iOS) to open on your device.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## User Flow
+
+1. **Landing Page** — Welcome screen with three core pillars: Notice, Wonder, Observe
+2. **Select a Lesson** — Browse lessons by topic, see progress and difficulty
+3. **Lesson Focus Card** — Review the learning objective and task checklist
+4. **AR Experience** — Camera-based multi-step flow:
+   - Find a plant outdoors
+   - Guess the plant type → simulated identification
+   - Observe closely → guided prompts
+   - Tap highlighted plant parts to learn
+   - Reflect and save to journal
+5. **My Garden** — View collected plants, badges, and key points learned
+6. **Profile** — See overall progress and stats
+
+## Current Status
+
+This is a **functional prototype** with simulated plant identification (mock data, no real ML/AI). The AR camera shows a live feed with overlay UI — identification results come from pre-built lesson data after a simulated delay.
+
+## License
+
+MIT
