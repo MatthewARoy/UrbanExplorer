@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(file:*)",
+      "WebSearch",
+      "Bash(rsync:*)",
+      "Bash(npm install:*)",
+      "Bash(npx expo:*)",
+      "Bash(mkdir:*)",
+      "Bash(npx tsc:*)",
+      "Bash(where node:*)",
+      "Bash(ls:*)",
+      "Bash(gh auth:*)",
+      "Bash(export:*)",
+      "Bash(gh repo:*)"
+    ]
+  }
+}
