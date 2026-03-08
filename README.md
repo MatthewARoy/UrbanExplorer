@@ -1,4 +1,4 @@
-# UrbanExplorer
+# OutdoorObserver
 
 A nature education app that uses AR-guided lessons to teach plant biology outdoors. Users explore real plants through interactive camera experiences, identify species, learn about plant parts and processes, and build a personal nature journal.
 
@@ -13,10 +13,10 @@ A nature education app that uses AR-guided lessons to teach plant biology outdoo
 ## Screenshots
 
 ### Landing Page
-![Landing Page](urban%20explorer%20landing%20page%20prototype.png)
+![Landing Page](outdoor%20observer%20landing%20page%20prototype.png)
 
 ### AR Experience & My Garden
-![AR Experience and My Garden](urban%20explorer%20basic%20prototype.png)
+![AR Experience and My Garden](outdoor%20observer%20basic%20prototype.png)
 
 ## Tech Stack
 

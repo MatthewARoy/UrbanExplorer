@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useMemo } from 'react';
+import React, { useEffect, useCallback, useRef } from 'react';
 import { View, Text, TextInput, StyleSheet } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -8,6 +8,7 @@ import { useARSessionStore } from '@/src/stores/useARSessionStore';
 import { CameraViewfinder } from '@/src/components/ar/CameraViewfinder';
 import { AROverlay } from '@/src/components/ar/AROverlay';
 import { IdentifyingLoader } from '@/src/components/ar/IdentifyingLoader';
+import { IdentificationError } from '@/src/components/ar/IdentificationError';
 import { PlantResultCard } from '@/src/components/ar/PlantResultCard';
 import { ObservationPrompt } from '@/src/components/ar/ObservationPrompt';
 import { PlantHighlightMarker } from '@/src/components/ar/PlantHighlightMarker';
@@ -36,35 +37,72 @@ export default function ARExperienceScreen() {
 
   const targetPlantId = lesson?.targetPlantId ?? '';
   const plant = useGardenStore((s) => s.plants.find((p) => p.id === targetPlantId));
+  const allPlants = useGardenStore((s) => s.plants);
   const entries = useGardenStore((s) => s.entries);
   const addEntry = useGardenStore((s) => s.addEntry);
-  const hasPlantInGarden = useMemo(() => entries.some((e) => e.plantId === targetPlantId), [entries, targetPlantId]);
+  const addPlant = useGardenStore((s) => s.addPlant);
 
   const phase = useARSessionStore((s) => s.phase);
+  const identifiedPlant = useARSessionStore((s) => s.identifiedPlant);
+  const identificationError = useARSessionStore((s) => s.identificationError);
+  const confidenceScore = useARSessionStore((s) => s.confidenceScore);
   const revealedHighlights = useARSessionStore((s) => s.revealedHighlights);
   const userNotes = useARSessionStore((s) => s.userNotes);
-  const setPhase = useARSessionStore((s) => s.setPhase);
-  const simulateIdentification = useARSessionStore((s) => s.simulateIdentification);
+  const identifyFromPhoto = useARSessionStore((s) => s.identifyFromPhoto);
+  const retryIdentification = useARSessionStore((s) => s.retryIdentification);
   const revealHighlight = useARSessionStore((s) => s.revealHighlight);
   const setUserNotes = useARSessionStore((s) => s.setUserNotes);
   const resetSession = useARSessionStore((s) => s.resetSession);
 
-  useEffect(() => {
-    resetSession();
-  }, []);
-
-  if (!lesson || !plant) {
-    return (
-      <View style={styles.centered}>
-        <Text style={{ color: colors.neutral[0] }}>Lesson not found</Text>
-      </View>
-    );
-  }
+  // The plant to display: use the identified plant from photo if available, otherwise the lesson's target plant
+  const displayPlant = identifiedPlant ?? plant;
 
   const currentTaskIndex = progress.currentTaskIndex;
-  const currentTask = lesson.tasks[currentTaskIndex];
-  const totalTasks = lesson.tasks.length;
-  const stepProgress = (currentTaskIndex + 1) / totalTasks;
+  const currentTask = lesson?.tasks[currentTaskIndex] ?? null;
+  const totalTasks = lesson?.tasks.length ?? 0;
+  const stepProgress = totalTasks > 0 ? (currentTaskIndex + 1) / totalTasks : 0;
+
+  // Track which plants we've already auto-saved in this session to avoid duplicates
+  const savedPlantIds = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    resetSession();
+    savedPlantIds.current.clear();
+  }, []);
+
+  // Auto-save every identified plant to the garden
+  useEffect(() => {
+    if (phase !== 'result_shown' || !identifiedPlant || !lesson) return;
+    if (savedPlantIds.current.has(identifiedPlant.id)) return;
+
+    savedPlantIds.current.add(identifiedPlant.id);
+
+    // Add dynamic plant to store if new
+    if (!allPlants.some((p) => p.id === identifiedPlant.id)) {
+      addPlant(identifiedPlant);
+    }
+
+    // Add garden entry if not already present
+    if (!entries.some((e) => e.plantId === identifiedPlant.id)) {
+      addEntry({
+        plantId: identifiedPlant.id,
+        lessonId: lessonId!,
+        photoUri: identifiedPlant.imageUri,
+        badges: lesson.badgesAwarded.map((label, i) => ({
+          id: `badge-${Date.now()}-${i}`,
+          label,
+          iconName: 'ribbon-outline',
+          color: colors.accent[500],
+          earned: true,
+        })),
+        keyPointsLearned: identifiedPlant.parts.length > 0
+          ? identifiedPlant.parts.map((p) => p.learnedFact)
+          : [identifiedPlant.funFact],
+        personalNotes: '',
+        mediaItems: [{ id: `media-${Date.now()}`, type: 'photo' as const, uri: identifiedPlant.imageUri }],
+      });
+    }
+  }, [phase, identifiedPlant]);
 
   const handleAdvance = useCallback(() => {
     if (currentTask) {
@@ -81,26 +119,9 @@ export default function ARExperienceScreen() {
     resetSession();
   }, [currentTask, currentTaskIndex, totalTasks, lessonId]);
 
-  const handleAddToGarden = useCallback(() => {
-    if (!hasPlantInGarden) {
-      addEntry({
-        plantId: plant.id,
-        lessonId: lessonId!,
-        photoUri: plant.imageUri,
-        badges: lesson.badgesAwarded.map((label, i) => ({
-          id: `badge-${i}`,
-          label,
-          iconName: 'ribbon-outline',
-          color: colors.accent[500],
-          earned: true,
-        })),
-        keyPointsLearned: plant.parts.map((p) => p.learnedFact),
-        personalNotes: '',
-        mediaItems: [{ id: `media-${Date.now()}`, type: 'photo' as const, uri: plant.imageUri }],
-      });
-    }
-    handleAdvance();
-  }, [hasPlantInGarden, plant, lesson, lessonId, handleAdvance]);
+  const handlePhotoTaken = useCallback((uri: string) => {
+    identifyFromPhoto(uri, allPlants);
+  }, [identifyFromPhoto, allPlants]);
 
   const handleSaveReflection = useCallback(() => {
     if (currentTask) {
@@ -109,6 +130,17 @@ export default function ARExperienceScreen() {
     completeLesson(lessonId!);
     router.replace('/(tabs)/garden' as any);
   }, [lessonId, currentTask]);
+
+  // Only show the shutter button during the interact task in camera_active phase
+  const showShutter = currentTask?.type === 'interact' && phase === 'camera_active';
+
+  if (!lesson || !plant) {
+    return (
+      <View style={styles.centered}>
+        <Text style={{ color: colors.neutral[0] }}>Lesson not found</Text>
+      </View>
+    );
+  }
 
   const renderTaskContent = () => {
     if (!currentTask) return null;
@@ -128,12 +160,21 @@ export default function ARExperienceScreen() {
         if (phase === 'identifying') {
           return <IdentifyingLoader />;
         }
-        if (phase === 'result_shown') {
+        if (phase === 'identification_failed') {
+          return (
+            <IdentificationError
+              message={identificationError ?? 'Something went wrong.'}
+              onRetry={retryIdentification}
+            />
+          );
+        }
+        if (phase === 'result_shown' && displayPlant) {
           return (
             <PlantResultCard
-              plant={plant}
+              plant={displayPlant}
               resultText={currentTask.resultText || 'Plant identified!'}
-              onAddToGarden={handleAddToGarden}
+              confidenceScore={confidenceScore}
+              autoSaved
               onContinue={handleAdvance}
             />
           );
@@ -141,9 +182,9 @@ export default function ARExperienceScreen() {
         return (
           <ObservationPrompt
             title={currentTask.title}
-            instruction={currentTask.instruction}
-            buttonText="Take a wild guess!"
-            onPress={() => simulateIdentification(plant.id)}
+            instruction="Point your camera at a plant and tap the shutter button to identify it."
+            buttonText=""
+            onPress={undefined}
           />
         );
 
@@ -218,7 +259,7 @@ export default function ARExperienceScreen() {
   };
 
   return (
-    <CameraViewfinder>
+    <CameraViewfinder onPhotoTaken={showShutter ? handlePhotoTaken : undefined}>
       <AROverlay>
         <View style={[styles.topBar, { paddingTop: insets.top + spacing.sm }]}>
           <IconButton iconName="close" onPress={() => router.back()} />

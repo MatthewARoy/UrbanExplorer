@@ -1,16 +1,16 @@
 {
   "expo": {
-    "name": "UrbanExplorer",
-    "slug": "urban-explorer",
+    "name": "OutdoorObserver",
+    "slug": "outdoor-observer",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "urbanexplorer",
+    "scheme": "outdoorobserver",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.urbanexplorer.app"
+      "bundleIdentifier": "com.outdoorobserver.app"
     },
     "android": {
       "adaptiveIcon": {
@@ -19,9 +19,13 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "package": "com.urbanexplorer.app",
+      "package": "com.outdoorobserver.app",
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "output": "static",
@@ -41,13 +45,19 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow UrbanExplorer to access your camera for plant identification."
+          "cameraPermission": "Allow OutdoorObserver to access your camera for plant identification."
         }
       ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "a044a4a5-d5c2-4d98-ba0e-045024c73074"
+      }
     }
   }
 }

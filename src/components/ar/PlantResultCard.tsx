@@ -5,6 +5,7 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
 } from 'react-native-reanimated';
+import { Ionicons } from '@expo/vector-icons';
 import { Button } from '@/src/components/ui/Button';
 import { colors, spacing, borderRadius } from '@/src/theme';
 import { Plant } from '@/src/types';
@@ -12,13 +13,17 @@ import { Plant } from '@/src/types';
 interface PlantResultCardProps {
   plant: Plant;
   resultText: string;
-  onAddToGarden: () => void;
+  confidenceScore?: number | null;
+  autoSaved?: boolean;
+  onAddToGarden?: () => void;
   onContinue: () => void;
 }
 
 export function PlantResultCard({
   plant,
   resultText,
+  confidenceScore,
+  autoSaved,
   onAddToGarden,
   onContinue,
 }: PlantResultCardProps) {
@@ -38,18 +43,41 @@ export function PlantResultCard({
         <View style={styles.handle} />
         <Image source={{ uri: plant.imageUri }} style={styles.image} />
         <View style={styles.info}>
-          <Text style={styles.resultText}>{resultText}</Text>
+          <View style={styles.resultRow}>
+            <Text style={styles.resultText}>{resultText}</Text>
+            {confidenceScore != null && (
+              <View style={styles.confidenceBadge}>
+                <Text style={styles.confidenceText}>
+                  {Math.round(confidenceScore * 100)}% match
+                </Text>
+              </View>
+            )}
+          </View>
           <Text style={styles.plantName}>{plant.commonName}</Text>
           <Text style={styles.scientificName}>{plant.scientificName}</Text>
           <Text style={styles.description} numberOfLines={2}>
             {plant.description}
           </Text>
         </View>
-        <Text style={styles.prompt}>Do you want to add this plant to your garden?</Text>
-        <View style={styles.buttons}>
-          <Button title="Add to Garden" onPress={onAddToGarden} variant="primary" icon="add-circle-outline" />
-          <Button title="Continue" onPress={onContinue} variant="ghost" />
-        </View>
+        {autoSaved ? (
+          <>
+            <View style={styles.savedRow}>
+              <Ionicons name="checkmark-circle" size={18} color={colors.success} />
+              <Text style={styles.savedText}>Saved to your garden</Text>
+            </View>
+            <View style={styles.buttons}>
+              <Button title="Continue" onPress={onContinue} variant="primary" icon="arrow-forward-outline" />
+            </View>
+          </>
+        ) : (
+          <>
+            <Text style={styles.prompt}>Do you want to add this plant to your garden?</Text>
+            <View style={styles.buttons}>
+              <Button title="Add to Garden" onPress={onAddToGarden!} variant="primary" icon="add-circle-outline" />
+              <Button title="Continue" onPress={onContinue} variant="ghost" />
+            </View>
+          </>
+        )}
       </View>
     </Animated.View>
   );
@@ -91,10 +119,26 @@ const styles = StyleSheet.create({
   info: {
     marginTop: spacing.md,
   },
+  resultRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   resultText: {
     fontSize: 14,
     color: colors.success,
     fontWeight: '600',
+  },
+  confidenceBadge: {
+    backgroundColor: colors.primary[100],
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: borderRadius.sm,
+  },
+  confidenceText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.primary[700],
   },
   plantName: {
     fontSize: 22,
@@ -112,6 +156,18 @@ const styles = StyleSheet.create({
     color: colors.neutral[600],
     lineHeight: 20,
     marginTop: spacing.sm,
+  },
+  savedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    marginTop: spacing.lg,
+  },
+  savedText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.success,
   },
   prompt: {
     fontSize: 15,

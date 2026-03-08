@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { FlatList, View, Text, StyleSheet, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useGardenStore } from '@/src/stores/useGardenStore';
 import { PlantThumbnail } from '@/src/components/garden/PlantThumbnail';
 import { colors, spacing } from '@/src/theme';
+import { GardenEntry } from '@/src/types';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const NUM_COLUMNS = 3;
@@ -14,6 +15,12 @@ const ITEM_SIZE = (SCREEN_WIDTH - spacing.lg * 2 - ITEM_MARGIN * (NUM_COLUMNS - 
 export default function GardenScreen() {
   const router = useRouter();
   const entries = useGardenStore((s) => s.entries);
+  const plants = useGardenStore((s) => s.plants);
+
+  const getPlantName = useCallback(
+    (plantId: string) => plants.find((p) => p.id === plantId)?.commonName ?? 'Unknown',
+    [plants]
+  );
 
   const renderHeader = () => (
     <View style={styles.header}>
@@ -40,24 +47,32 @@ export default function GardenScreen() {
     </View>
   );
 
+  const renderItem = useCallback(({ item }: { item: GardenEntry }) => (
+    <PlantThumbnail
+      imageUri={item.photoUri}
+      name={getPlantName(item.plantId)}
+      size={ITEM_SIZE}
+      onPress={() => router.push(`/(tabs)/garden/${item.plantId}` as any)}
+    />
+  ), [getPlantName]);
+
+  const keyExtractor = useCallback((item: GardenEntry) => item.id, []);
+
   return (
     <View style={styles.container}>
       <FlatList
         data={entries}
-        keyExtractor={(item) => item.id}
+        keyExtractor={keyExtractor}
         numColumns={NUM_COLUMNS}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={renderHeader}
         ListEmptyComponent={renderEmpty}
         columnWrapperStyle={entries.length > 0 ? styles.row : undefined}
-        renderItem={({ item }) => (
-          <PlantThumbnail
-            imageUri={item.photoUri}
-            size={ITEM_SIZE}
-            onPress={() => router.push(`/(tabs)/garden/${item.plantId}` as any)}
-          />
-        )}
+        renderItem={renderItem}
+        removeClippedSubviews
+        maxToRenderPerBatch={15}
+        windowSize={5}
       />
     </View>
   );

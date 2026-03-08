@@ -10,6 +10,7 @@ interface GardenState {
   plants: Plant[];
 
   addEntry: (entry: Omit<GardenEntry, 'id' | 'collectedAt'>) => void;
+  addPlant: (plant: Plant) => void;
   removeEntry: (entryId: string) => void;
   updateNotes: (entryId: string, notes: string) => void;
 }
@@ -32,6 +33,13 @@ export const useGardenStore = create<GardenState>()(
           ],
         })),
 
+      addPlant: (plant) =>
+        set((state) => ({
+          plants: state.plants.some((p) => p.id === plant.id)
+            ? state.plants
+            : [...state.plants, plant],
+        })),
+
       removeEntry: (entryId) =>
         set((state) => ({
           entries: state.entries.filter((e) => e.id !== entryId),
@@ -47,7 +55,7 @@ export const useGardenStore = create<GardenState>()(
     {
       name: 'garden-storage',
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: (state) => ({ entries: state.entries }),
+      partialize: (state) => ({ entries: state.entries, plants: state.plants }),
     }
   )
 );
